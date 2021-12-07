@@ -528,6 +528,31 @@
      			 :wrong-type-arg2 (list 'Wrong 'type 'in 'arg2 nom-arg)
          ())))))
 
+; FUNCIONES AXILIARES GENERALES
+
+(defn toUppercase [elem]
+  (cond
+    (or (string? elem) (char? elem)) (.toUpperCase elem)
+    (symbol? elem) (symbol (.toUpperCase (str elem)))
+    :else elem
+  )
+)
+
+(defn toSchemeBoolean [elem]
+  (cond
+    (= elem true) (symbol "#t")
+    (= elem false) (symbol "#f")
+    :else nil
+  )
+)
+
+(defn generateError [message]
+  (list (symbol ";ERROR:") message)
+)
+
+(defn generatWarning [message]
+  (list (symbol ";WARNING:") message)
+)
 
 ; FUNCIONES QUE DEBEN SER IMPLEMENTADAS PARA COMPLETAR EL INTERPRETE DE SCHEME (ADEMAS DE COMPLETAR `EVALUAR` Y `APLICAR-FUNCION-PRIMITIVA`):
 
@@ -554,9 +579,29 @@
 ; -1
 ; user=> (verificar-parentesis "(hola '(mundo) )")
 ; 0
-(defn verificar-parentesis
-  "Cuenta los parentesis en una cadena, sumando 1 si `(`, restando 1 si `)`. Si el contador se hace negativo, para y retorna -1."
-)
+(defn encodear-parentesis [letter](
+  cond
+  	(= letter \() 1
+  	(= letter \)) -1
+  	:else 0
+))
+
+(defn _verificar-parentesis [seq-entrada contador i count-entrada] (
+  cond
+    (< contador 0)  -1
+    (= i count-entrada) contador
+    :else (
+      _verificar-parentesis
+        seq-entrada
+        (+ contador (encodear-parentesis (nth seq-entrada i)))
+        (+ i 1)
+        count-entrada
+    )
+))
+
+(defn verificar-parentesis [entrada] (
+    _verificar-parentesis (seq entrada) 0 0 (count entrada)
+))
 
 ; user=> (actualizar-amb '(a 1 b 2 c 3) 'd 4)
 ; (a 1 b 2 c 3 d 4)
@@ -575,9 +620,13 @@
 ; 3
 ; user=> (buscar 'f '(a 1 b 2 c 3 d 4 e 5))
 ; (;ERROR: unbound variable: f)
-(defn buscar
-  "Busca una clave en un ambiente (una lista con claves en las posiciones impares [1, 3, 5...] y valores en las pares [2, 4, 6...]
-   y devuelve el valor asociado. Devuelve un error :unbound-variable si no la encuentra."
+(defn buscar [clave iterable] 
+  (let [index (.indexOf iterable clave)]
+    (cond
+      (= index -1) (generateError (str "unbound-variable: " clave))
+      :else (nth iterable (+ index 1))
+    )
+  )
 )
 
 ; user=> (error? (list (symbol ";ERROR:") 'mal 'hecho))
@@ -586,8 +635,14 @@
 ; false
 ; user=> (error? (list (symbol ";WARNING:") 'mal 'hecho))
 ; true
-(defn error?
-  "Devuelve true o false, segun sea o no el arg. una lista con `;ERROR:` o `;WARNING:` como primer elemento."
+(defn error? [elem]
+  (cond
+    (list? elem) (
+      let [first_elem (nth elem 0)]
+      (or (= first_elem (symbol ";ERROR:")) (= first_elem (symbol ";WARNING:")))
+    )
+    :else false
+  )
 )
 
 ; user=> (proteger-bool-en-str "(or #F #f #t #T)")

@@ -531,6 +531,24 @@
 
 ; FUNCIONES QUE DEBEN SER IMPLEMENTADAS PARA COMPLETAR EL INTERPRETE DE SCHEME (ADEMAS DE COMPLETAR `EVALUAR` Y `APLICAR-FUNCION-PRIMITIVA`):
 
+
+; FUNCIONES AXILIARES GENERALES
+
+(defn toUppercase [elem](
+  cond
+    (or (string? elem) (char? elem)) (.toUpperCase elem)
+    (symbol? elem) (symbol (.toUpperCase (str elem)))
+    :else elem
+))
+
+(defn toSchemeBoolean [elem](
+  cond
+    (= elem true) (symbol "#t")
+    (= elem false) (symbol "#f")
+    :else nil
+))
+
+
 ; LEER-ENTRADA:
 ; user=> (leer-entrada)
 ; (hola
@@ -694,8 +712,14 @@
 ; #t
 ; user=> (fnc-equal? '(1 1 2 1))
 ; #f
-(defn fnc-equal?
-  "Compara elementos. Si son iguales, devuelve #t. Si no, #f."
+
+(defn fnc-equal? [elem]
+  (toSchemeBoolean
+    (if (empty? elem)
+      true
+      (apply = (map toUppercase elem))
+    )
+  )
 )
 
 ; user=> (fnc-read ())
@@ -797,7 +821,7 @@
 (defn fnc-menor [numbers] (
   cond
     (empty? numbers) "#t"
-    (every? number? numbers) (if (apply < numbers) "#t" "#f")
+    (every? number? numbers) (toSchemeBoolean (apply < numbers))
     :else (error-message-NaN numbers (index-of-first-NaN numbers))
 ))
 
