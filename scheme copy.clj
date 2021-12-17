@@ -13,14 +13,14 @@
 (declare aplicar)
 
 ; Funciones secundarias de evaluar
-(declare evaluar-if) ;SI
-(declare evaluar-or) ;SI
+(declare evaluar-if)
+(declare evaluar-or)
 (declare evaluar-cond)
 (declare evaluar-eval)
-(declare evaluar-exit) ;SI
-(declare evaluar-load) ;SI
+(declare evaluar-exit)
+(declare evaluar-load)
 (declare evaluar-set!)
-(declare evaluar-quote) ;SI
+(declare evaluar-quote)
 (declare evaluar-define)
 (declare evaluar-lambda)
 (declare evaluar-escalar)
@@ -30,26 +30,26 @@
 (declare aplicar-funcion-primitiva)
 
 ; Funciones primitivas
-(declare fnc-car) ;SI
-(declare fnc-cdr) ;SI
-(declare fnc-env) ;SI
-(declare fnc-not) ;SI
-(declare fnc-cons) ;SI
-(declare fnc-list) ;SI
-(declare fnc-list?) ;SI
-(declare fnc-read) ;SI
-(declare fnc-mayor) ;SI
-(declare fnc-menor) ;SI
-(declare fnc-null?) ;SI
-(declare fnc-sumar) ;SI
-(declare fnc-append) ;SI
-(declare fnc-equal?) ;SI
-(declare fnc-length) ;SI
-(declare fnc-restar) ;SI
-(declare fnc-display) ;SI
-(declare fnc-newline) ;SI
-(declare fnc-reverse) ;SI
-(declare fnc-mayor-o-igual) ;SI
+(declare fnc-car)
+(declare fnc-cdr)
+(declare fnc-env)
+(declare fnc-not)
+(declare fnc-cons)
+(declare fnc-list)
+(declare fnc-list?)
+(declare fnc-read)
+(declare fnc-mayor)
+(declare fnc-menor)
+(declare fnc-null?)
+(declare fnc-sumar)
+(declare fnc-append)
+(declare fnc-equal?)
+(declare fnc-length)
+(declare fnc-restar)
+(declare fnc-display)
+(declare fnc-newline)
+(declare fnc-reverse)
+(declare fnc-mayor-o-igual)
 
 ; Funciones auxiliares
 
@@ -64,7 +64,6 @@
 (declare actualizar-amb)
 (declare restaurar-bool)
 (declare generar-nombre-arch)
-
 (declare nombre-arch-valido?)
 (declare controlar-aridad-fnc)
 (declare proteger-bool-en-str)
@@ -113,19 +112,6 @@
                    (imprimir (generar-mensaje-error :error (get (Throwable->map e) :cause)))
                    (repl amb)))))                        ; LOOP (Se llama a si misma con el ambiente intacto)
 
-
-(declare evaluar-if)
-(declare evaluar-or)
-(declare evaluar-cond)
-(declare evaluar-eval)
-(declare evaluar-exit)
-(declare evaluar-load)
-(declare evaluar-set!)
-(declare evaluar-quote)
-(declare evaluar-define)
-(declare evaluar-lambda)
-(declare evaluar-escalar)
-
 (defn evaluar
   "Evalua una expresion `expre` en un ambiente. Devuelve un lista con un valor resultante y un ambiente."
   [expre amb]
@@ -137,13 +123,16 @@
         (igual? (first expre) 'define) (evaluar-define expre amb)
 
         (igual? (first expre) 'if) (evaluar-if expre amb)
+
         (igual? (first expre) 'or) (evaluar-or expre amb)
+
+        (igual? (first expre) 'set!) (evaluar-set! expre amb)
+
         (igual? (first expre) 'cond) (evaluar-cond expre amb)
         (igual? (first expre) 'eval) (evaluar-eval expre amb)
-        (igual? (first expre) 'exit) (evaluar-exit expre amb) ;funciona
-        (igual? (first expre) 'load) (evaluar-load expre amb) ;funciona
+        (igual? (first expre) 'exit) (evaluar-exit expre amb)
+        (igual? (first expre) 'load) (evaluar-load expre amb)
         (igual? (first expre) 'quote) (evaluar-quote expre amb)
-        (igual? (first expre) 'set!) (evaluar-set! expre amb)
         (igual? (first expre) 'lambda) (evaluar-lambda expre amb)
         (igual? (first expre) 'escalar) (evaluar-escalar expre amb)
 
@@ -200,39 +189,34 @@
   [fnc lae amb]
   (cond
 
-    (igual? fnc 'car)     (fnc-car lae) ;funciona (cdr (list 1 2 3 4 5))
-    (igual? fnc 'cdr)     (fnc-cdr lae) ;funciona (car (list 1 2 3 4 5))
-    (igual? fnc 'env)     (fnc-env lae amb) ;funciona (env)
-    (igual? fnc 'not)     (fnc-not lae) ;funciona
-    (igual? fnc 'cons)    (fnc-cons lae) ; funciona (list 1 2 3))
-    (igual? fnc 'list)    (fnc-list lae) ;funciona (list 1 2 4)
-    (igual? fnc 'list?)   (fnc-list? lae) ;funciona (list? '(b c))
-    (igual? fnc 'read)    (fnc-read lae) ;funciona
-    (= fnc '>)            (fnc-mayor lae) ;funciona (> 1 2 3 )
-    (= fnc '<)            (fnc-menor lae) ;funciona (< 1 2 3 )
-    (igual? fnc 'null?)   (fnc-null? lae) ;funciona (null? 5)
-    (= fnc '+)            (fnc-sumar lae) ;funciona (+ 1 2 3 )
+    (= fnc '<)            (fnc-menor lae)
+    (= fnc '>)            (fnc-mayor lae)
+    (= fnc '>=)           (fnc-mayor-o-igual lae)
+    (= fnc '=)            (fnc-equal? lae)
+    (= fnc '+)            (fnc-sumar lae)
+    (= fnc '-)            (fnc-restar lae)
 
-    (igual? fnc 'append)  (fnc-append lae) ;funciona (append (list 1 2) (list 3 4))
-    (igual? fnc 'equal?)  (fnc-equal? lae) ;funciona (equal? 2 2 2 2 2 3)
-    (igual? fnc 'length)  (fnc-length lae) ;funciona  (length (list 1 2)) 
-    (igual? fnc 'display) (fnc-display lae) ;funciona (display "hola roman")
-    (igual? fnc 'newline) (fnc-newline lae) ;funciona (newline)
-    (igual? fnc 'reverse) (fnc-reverse lae) ;funciona (reverse '(1 2 3 4))
-    (= fnc '>=)           (fnc-mayor-o-igual lae) ;funciona
-
-
-    (igual? fnc (symbol "#f")) "BOOLEANO"
+    (igual? fnc 'not)     (fnc-not lae)
+    (igual? fnc 'append)  (fnc-append lae)
+    (igual? fnc 'car)    (fnc-car lae)
+    (igual? fnc 'cdr)    (fnc-cdr lae)
+    (igual? fnc 'env)    (fnc-env lae amb)
+    (igual? fnc 'read)    (fnc-read lae)
+    (igual? fnc 'cons)    (fnc-cons lae)
+    (igual? fnc 'list)    (fnc-list lae)
+    (igual? fnc 'list?)    (fnc-list? lae)
+    (igual? fnc 'null?)    (fnc-null? lae)
+    (igual? fnc 'display)    (fnc-display lae)
+    (igual? fnc 'newline)    (fnc-newline lae)
+    (igual? fnc 'reverse)    (fnc-reverse lae)
 
     :else (generar-mensaje-error :wrong-type-apply fnc)))
 
 
-(defn fnc-car 
+(defn fnc-car
   "Devuelve el primer elemento de una lista."
   [lae]
   (let [ari (controlar-aridad-fnc lae 1 'car), arg1 (first lae)]
-    
-  
        (cond
          (error? ari) ari
          (or (not (seq? arg1)) (empty? arg1)) (generar-mensaje-error :wrong-type-arg1 'car arg1)
@@ -554,18 +538,6 @@
 
 ; FUNCIONES AXILIARES GENERALES
 
-(defn _indexOf [clave iterable index length]
-  (cond
-    (= length index) -1 
-    (igual? (nth iterable index) clave) index
-    :else (_indexOf clave iterable (+ index 1) length)
-  )
-)
-
-(defn indexOf [iterable value]
-  (_indexOf value iterable 0 (count iterable))
-)
-
 (defn toUppercase [elem](
   cond
     (or (string? elem) (char? elem)) (.toUpperCase elem)
@@ -580,6 +552,18 @@
     :else nil
 ))
 
+(defn _indexOf [clave iterable index length]
+  (cond
+    (= length index) -1 
+    (igual? (nth iterable index) clave) index
+    :else (_indexOf clave iterable (+ index 1) length)
+  )
+)
+
+(defn indexOf [value iterable]
+  (_indexOf value iterable 0 (count iterable))
+)
+
 (defn first-nan [the-list]
   (let [index (indexOf (map number? the-list) false)]
     (nth the-list index)
@@ -587,7 +571,7 @@
 )
 
 (defn first-nal [the-list]
-  (let [index (indexOf (map seq? the-list) false)]
+  (let [index (indexOf (map list? the-list) false)]
     (nth the-list index)
   )
 )
@@ -688,7 +672,6 @@
 ; 3
 ; user=> (buscar 'f '(a 1 b 2 c 3 d 4 e 5))
 ; (;ERROR: unbound variable: f)
-
 (defn buscar [clave iterable] 
   (let [index (indexOf iterable clave)]
     (cond
@@ -706,7 +689,7 @@
 ; true
 (defn error? [elem]
   (cond
-    (seq? elem) (
+    (list? elem) (
       let [first_elem (nth elem 0)]
       (or (= first_elem (symbol ";ERROR:")) (= first_elem (symbol ";WARNING:")))
     )
@@ -735,7 +718,7 @@
 ; user=> (restaurar-bool (read-string "(and (or %F %f %t %T) %T)") )
 ; (and (or #F #f #t #T) #T)
 (defn restaurar-bool [value]
-  (if (seq? value) 
+  (if (list? value) 
     (map restaurar-bool value)
     (cond
       (= value (symbol "%t")) (symbol "#t")
@@ -759,8 +742,9 @@
 ; false
 (defn igual? [value1 value2] (
   cond
-  (and (symbol? value1) (symbol? value2))  (= (.toUpperCase (str value2)) (.toUpperCase (str value1)))
-  :else (= value2 value1)
+    (not= (type value1) (type value2)) false
+    (symbol? value1) (= (.toUpperCase (str value2)) (.toUpperCase (str value1)))
+    :else (= value2 value1)
 ))
 
 ; user=> (fnc-append '( (1 2) (3) (4 5) (6 7)))
@@ -771,7 +755,7 @@
 ; (;ERROR: append: Wrong type in arg A)
 (defn fnc-append [expre] 
   (cond
-    (every? seq? expre) (reduce concat expre)
+    (every? list? expre) (reduce concat expre)
     :else (generar-mensaje-error :wrong-type-arg 'append (first-nal expre))
   )
 )
@@ -1009,8 +993,11 @@
   "Evalua una expresion `define`. Devuelve una lista con el resultado y un ambiente actualizado con la definicion."
   [expre amb]
   (cond
-    (and (seq? amb) (= 3 (count expre)) (= (symbol "define") (nth expre 0)))
-        (evaluar (pop expre) amb)
+    (and (list? amb) (= 3 (count expre)) (= (symbol "define") (nth expre 0)))
+        (cond
+          (symbol? (nth expre 1)) (if (= (nth expre 1) (nth amb 0)) (pop expre) amb) 
+          (and (list? (nth expre 1)) (> 0 (count (nth expre 1)))) (_evaluar-define expre amb)
+          :else (list (generar-mensaje-error :bad-variable 'define expre) amb))
     :else (list (generar-mensaje-error :missing-or-extra 'define expre) amb)    
   )
 )
@@ -1071,11 +1058,11 @@
   )
 )
 
-(defn evaluar-or [expre amb]
-  (let [len (count expre)]
+(defn evaluar-or [toeval amb]
+  (let [len (count toeval)]
     (cond
       (= len 1) (list (symbol "#f") amb)
-      :else (evaluar (getIfNotFalse expre 1 len) amb)
+      :else (evaluar-escalar (getIfNotFalse toeval 1 len) amb)
     )
   )
 )
