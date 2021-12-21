@@ -773,9 +773,7 @@
 (defn fnc-equal? [iterable]
   (if (empty? iterable)
     (toSchemeBoolean true)
-    (toSchemeBoolean (_fnc-equal iterable 0 (count iterable)))
-  )
-)
+    (toSchemeBoolean (_fnc-equal iterable 0 (count iterable)))))
 
 ; user=> (fnc-read ())
 ; (hola
@@ -790,18 +788,12 @@
 (defn fnc-read
   "Lee una cadena desde la terminal/consola. Si los parentesis no estan correctamente balanceados al presionar Enter/Intro,
    se considera que la cadena ingresada es una subcadena y el ingreso continua. De lo contrario, se la devuelve completa."
-   [arg]
-   (let [cant (count arg)]
+  [arg]
+  (let [cant (count arg)]
     (cond
       (= cant 0) (restaurar-bool (read-string (proteger-bool-en-str (leer-entrada))))
       (= cant 1) (generar-mensaje-error :io-ports-not-implemented 'read)
-      :else (generar-mensaje-error :wrong-number-args-prim-proc 'read)
-    )
-   )
-)
-
-
-
+      :else (generar-mensaje-error :wrong-number-args-prim-proc 'read))))
 
 ; user=> (fnc-sumar ())
 ; 0
@@ -972,13 +964,13 @@
 (defn define-lambda [expre amb]
   (let [nombre (first (nth expre 1))
         parametros (rest (nth expre 1))
-        funcion (nth expre 2)]
+        funcion (nthrest expre 2)]
     (list
      (symbol "#<unspecified>")
      (concat
       amb
       (list nombre)
-      (list (list 'lambda parametros funcion))))))
+      (list (concat (list 'lambda parametros) funcion))))))
 
 (defn define-macro [expre amb]
   (list (symbol "#<unspecified>")
@@ -989,7 +981,7 @@
 (defn evaluar-define
   "Evalua una expresion `define`. Devuelve una lista con el resultado y un ambiente actualizado con la definicion."
   [expre amb]
-  (if (= 3 (count expre))
+  (if (<= 3 (count expre))
 
     (if (seq? (nth expre 1))
       (define-lambda expre amb)
