@@ -4,8 +4,8 @@
 
 (defn spy
   ([x] (do (prn x) x))
-  ([msg x] (do (print msg) (print ": ") (prn x) x))
-)
+  ([msg x] (do (print msg) (print ": ") (prn x) x)))
+
 
 ; Funciones principales
 (declare repl)
@@ -13,14 +13,14 @@
 (declare aplicar)
 
 ; Funciones secundarias de evaluar
-(declare evaluar-if)
-(declare evaluar-or)
+(declare evaluar-if) ;SI
+(declare evaluar-or) ;SI
 (declare evaluar-cond)
 (declare evaluar-eval)
-(declare evaluar-exit)
-(declare evaluar-load)
+(declare evaluar-exit) ;SI
+(declare evaluar-load) ;SI
 (declare evaluar-set!)
-(declare evaluar-quote)
+(declare evaluar-quote) ;SI
 (declare evaluar-define)
 (declare evaluar-lambda)
 (declare evaluar-escalar)
@@ -30,26 +30,26 @@
 (declare aplicar-funcion-primitiva)
 
 ; Funciones primitivas
-(declare fnc-car)
-(declare fnc-cdr)
-(declare fnc-env)
-(declare fnc-not)
-(declare fnc-cons)
-(declare fnc-list)
-(declare fnc-list?)
-(declare fnc-read)
-(declare fnc-mayor)
-(declare fnc-menor)
-(declare fnc-null?)
-(declare fnc-sumar)
-(declare fnc-append)
-(declare fnc-equal?)
-(declare fnc-length)
-(declare fnc-restar)
-(declare fnc-display)
-(declare fnc-newline)
-(declare fnc-reverse)
-(declare fnc-mayor-o-igual)
+(declare fnc-car) ;SI
+(declare fnc-cdr) ;SI
+(declare fnc-env) ;SI
+(declare fnc-not) ;SI
+(declare fnc-cons) ;SI
+(declare fnc-list) ;SI
+(declare fnc-list?) ;SI
+(declare fnc-read) ;SI
+(declare fnc-mayor) ;SI
+(declare fnc-menor) ;SI
+(declare fnc-null?) ;SI
+(declare fnc-sumar) ;SI
+(declare fnc-append) ;SI
+(declare fnc-equal?) ;SI
+(declare fnc-length) ;SI
+(declare fnc-restar) ;SI
+(declare fnc-display) ;SI
+(declare fnc-newline) ;SI
+(declare fnc-reverse) ;SI
+(declare fnc-mayor-o-igual) ;SI
 
 ; Funciones auxiliares
 
@@ -64,6 +64,7 @@
 (declare actualizar-amb)
 (declare restaurar-bool)
 (declare generar-nombre-arch)
+
 (declare nombre-arch-valido?)
 (declare controlar-aridad-fnc)
 (declare proteger-bool-en-str)
@@ -103,14 +104,27 @@
               (let [str-corregida (proteger-bool-en-str renglon),
                     cod-en-str (read-string str-corregida),
                     cod-corregido (restaurar-bool cod-en-str),
-                    res (evaluar cod-corregido amb)]     ; EVAL
+                    res (evaluar cod-corregido amb)     ; EVAL
                     (if (nil? (second res))              ;   Si el ambiente del resultado es `nil`, es porque se ha evaluado (exit)
                         'Goodbye!                        ;   En tal caso, sale del REPL devolviendo Goodbye!.
                         (do (imprimir (first res))       ; PRINT
-                            (repl (second res)))))))     ; LOOP (Se llama a si misma con el nuevo ambiente)
+                            (repl (second res))))])))     ; LOOP (Se llama a si misma con el nuevo ambiente)
      (catch Exception e                                  ; PRINT (si se lanza una excepcion)
                    (imprimir (generar-mensaje-error :error (get (Throwable->map e) :cause)))
                    (repl amb)))))                        ; LOOP (Se llama a si misma con el ambiente intacto)
+
+
+(declare evaluar-if)
+(declare evaluar-or)
+(declare evaluar-cond)
+(declare evaluar-eval)
+(declare evaluar-exit)
+(declare evaluar-load)
+(declare evaluar-set!)
+(declare evaluar-quote)
+(declare evaluar-define)
+(declare evaluar-lambda)
+(declare evaluar-escalar)
 
 (defn evaluar
   "Evalua una expresion `expre` en un ambiente. Devuelve un lista con un valor resultante y un ambiente."
@@ -123,22 +137,18 @@
         (igual? (first expre) 'define) (evaluar-define expre amb)
 
         (igual? (first expre) 'if) (evaluar-if expre amb)
-
         (igual? (first expre) 'or) (evaluar-or expre amb)
-
-        (igual? (first expre) 'set!) (evaluar-set! expre amb)
-
         (igual? (first expre) 'cond) (evaluar-cond expre amb)
         (igual? (first expre) 'eval) (evaluar-eval expre amb)
-        (igual? (first expre) 'exit) (evaluar-exit expre amb)
-        (igual? (first expre) 'load) (evaluar-load expre amb)
-        (igual? (first expre) 'quote) (evaluar-quote expre amb)
+        (igual? (first expre) 'exit) (evaluar-exit expre amb) ;funciona
+        (igual? (first expre) 'load) (evaluar-load expre amb) ;funciona
+        (igual? (first expre) 'quote) (evaluar-quote expre amb) ;funciona (equal? (quote a) 'a)
+        (igual? (first expre) 'set!) (evaluar-set! expre amb)
         (igual? (first expre) 'lambda) (evaluar-lambda expre amb)
-        (igual? (first expre) 'escalar) (evaluar-escalar expre amb)
 
-	    	  :else (let [res-eval-1 (evaluar (first expre) amb),
-             						 res-eval-2 (reduce (fn [x y] (let [res-eval-3 (evaluar y (first x))] (cons (second res-eval-3) (concat (next x) (list (first res-eval-3)))))) (cons (list (second res-eval-1)) (next expre)))]
-					              	(aplicar (first res-eval-1) (next res-eval-2) (first res-eval-2))))))
+          :else (let [res-eval-1 (evaluar (first expre) amb),
+                            res-eval-2 (reduce (fn [x y] (let [res-eval-3 (evaluar y (first x))] (cons (second res-eval-3) (concat (next x) (list (first res-eval-3)))))) (cons (list (second res-eval-1)) (next expre)))
+                            (aplicar (first res-eval-1) (next res-eval-2) (first res-eval-2))]))))
 
 
 (defn aplicar
@@ -173,8 +183,8 @@
         cuerpo (first (nnext fnc)),
         expre (if (and (seq? cuerpo) (seq? (first cuerpo)) (igual? (ffirst cuerpo) 'lambda))
                   (cons (first cuerpo) (postwalk-replace mapa (rest cuerpo)))
-                  (postwalk-replace mapa cuerpo))]
-        (evaluar expre amb)))
+                  (postwalk-replace mapa cuerpo))
+        (evaluar expre amb)]))
 
 
 (defn aplicar-lambda-multiple
@@ -189,34 +199,41 @@
   [fnc lae amb]
   (cond
 
-    (= fnc '<)            (fnc-menor lae)
-    (= fnc '>)            (fnc-mayor lae)
-    (= fnc '>=)           (fnc-mayor-o-igual lae)
-    (= fnc '=)            (fnc-equal? lae)
-    (= fnc '+)            (fnc-sumar lae)
-    (= fnc '-)            (fnc-restar lae)
+    (igual? fnc 'car)     (fnc-car lae) ;funciona (cdr (list 1 2 3 4 5))
+    (igual? fnc 'cdr)     (fnc-cdr lae) ;funciona (car (list 1 2 3 4 5))
+    (igual? fnc 'env)     (fnc-env lae amb) ;funciona (env)
+    (igual? fnc 'not)     (fnc-not lae) ;funciona
+    (igual? fnc 'cons)    (fnc-cons lae) ; funciona (list 1 2 3))
+    (igual? fnc 'list)    (fnc-list lae) ;funciona (list 1 2 4)
+    (igual? fnc 'list?)   (fnc-list? lae) ;funciona (list? '(b c))
+    (igual? fnc 'read)    (fnc-read lae) ;funciona
+    (= fnc '>)            (fnc-mayor lae) ;funciona (> 1 2 3 )
+    (= fnc '<)            (fnc-menor lae) ;funciona (< 1 2 3 )
+    (igual? fnc 'null?)   (fnc-null? lae) ;funciona (null? 5)
+    (= fnc '+)            (fnc-sumar lae) ;funciona (+ 1 2 3 )
+    (= fnc '-)            (fnc-restar lae) ;funciona (+ 1 2 3 )
+    
 
-    (igual? fnc 'not)     (fnc-not lae)
-    (igual? fnc 'append)  (fnc-append lae)
-    (igual? fnc 'car)    (fnc-car lae)
-    (igual? fnc 'cdr)    (fnc-cdr lae)
-    (igual? fnc 'env)    (fnc-env lae amb)
-    (igual? fnc 'read)    (fnc-read lae)
-    (igual? fnc 'cons)    (fnc-cons lae)
-    (igual? fnc 'list)    (fnc-list lae)
-    (igual? fnc 'list?)    (fnc-list? lae)
-    (igual? fnc 'null?)    (fnc-null? lae)
-    (igual? fnc 'display)    (fnc-display lae)
-    (igual? fnc 'newline)    (fnc-newline lae)
-    (igual? fnc 'reverse)    (fnc-reverse lae)
+    (igual? fnc 'append)  (fnc-append lae) ;funciona (append (list 1 2) (list 3 4)) (append '(1 2 3) '(2 3 4))
+    (igual? fnc 'equal?)  (fnc-equal? lae) ;funciona (equal? 2 2 2 2 2 3)
+    (igual? fnc 'length)  (fnc-length lae) ;funciona  (length (list 1 2)) 
+    (igual? fnc 'display) (fnc-display lae) ;funciona (display "hola roman")
+    (igual? fnc 'newline) (fnc-newline lae) ;funciona (newline)
+    (igual? fnc 'reverse) (fnc-reverse lae) ;funciona (reverse '(1 2 3 4))
+    (= fnc '>=)           (fnc-mayor-o-igual lae) ;funciona
+
+
+    (igual? fnc (symbol "#f")) "BOOLEANO"
 
     :else (generar-mensaje-error :wrong-type-apply fnc)))
 
 
-(defn fnc-car
+(defn fnc-car 
   "Devuelve el primer elemento de una lista."
   [lae]
   (let [ari (controlar-aridad-fnc lae 1 'car), arg1 (first lae)]
+    
+  
        (cond
          (error? ari) ari
          (or (not (seq? arg1)) (empty? arg1)) (generar-mensaje-error :wrong-type-arg1 'car arg1)
@@ -239,8 +256,8 @@
   (let [ari (controlar-aridad-fnc lae 2 'cons), arg1 (first lae), arg2 (second lae)]
        (cond
          (error? ari) ari
-					   	(not (seq? arg2)) (generar-mensaje-error :only-proper-lists-implemented 'cons)
-					   	:else (cons arg1 arg2))))
+               (not (seq? arg2)) (generar-mensaje-error :only-proper-lists-implemented 'cons)
+               :else (cons arg1 arg2))))
 
 
 (defn fnc-display
@@ -325,12 +342,12 @@
 
 (defn fnc-reverse
   "Devuelve una lista con los elementos de `lae` en orden inverso."
-  [lae]
+  [lae
     (let [ari (controlar-aridad-fnc lae 1 'reverse), arg1 (first lae)]
        (cond
          (error? ari) ari
          (not (seq? arg1)) (generar-mensaje-error :wrong-type-arg1 'reverse arg1)
-         :else (reverse arg1))))
+         :else (reverse arg1)))])
 
 
 (defn controlar-aridad-fnc
@@ -373,37 +390,37 @@
   [expre amb]
   (if (= (count expre) 1) ; si es el operador solo
       (list (generar-mensaje-error :bad-or-missing 'cond expre) amb)
-      (let [res (drop-while #(and (seq? %) (not (empty? %))) (next expre))]
+      (let [res (drop-while #(and (seq? %) (not (empty? %))) (next expre))
             (if (empty? res) 
                 (evaluar-clausulas-de-cond expre (next expre) amb)
-                (list (generar-mensaje-error :bad-or-missing 'cond (first res)) amb)))))
+                (list (generar-mensaje-error :bad-or-missing 'cond (first res)) amb))])))
 
 
 (defn evaluar-clausulas-de-cond
   "Evalua las clausulas de cond."
   [expre lis amb]
-  (if (nil? lis)
-	     (list (symbol "#<unspecified>") amb) ; cuando ninguna fue distinta de #f
-		    (let [res-eval (if (not (igual? (ffirst lis) 'else))
-		                       (evaluar (ffirst lis) amb)
-		                       (if (nil? (next lis))
-		                           (list (symbol "#t") amb)
-		                           (list (generar-mensaje-error :bad-else-clause 'cond expre) amb)))]
-		         (cond
-		           (error? (first res-eval)) res-eval
-		           (igual? (first res-eval) (symbol "#f")) (recur expre (next lis) (second res-eval)) 
-		           :else (evaluar-secuencia-en-cond (nfirst lis) (second res-eval))))))
+  (if (nil? lis
+       (list (symbol "#<unspecified>") amb ; cuando ninguna fue distinta de #f
+        (let [res-eval (if (not (igual? (ffirst lis) 'else))
+                           (evaluar (ffirst lis) amb)
+                           (if (nil? (next lis))
+                               (list (symbol "#t") amb)
+                               (list (generar-mensaje-error :bad-else-clause 'cond expre) amb)))]
+             (cond
+               (error? (first res-eval)) res-eval
+               (igual? (first res-eval) (symbol "#f")) (recur expre (next lis) (second res-eval)) 
+               :else (evaluar-secuencia-en-cond (nfirst lis) (second res-eval))))))))
 
 
 (defn evaluar-secuencia-en-cond
   "Evalua secuencialmente las sublistas de `lis`. Devuelve el valor de la ultima evaluacion."
-  [lis amb]
-	  (if (nil? (next lis))
-	      (evaluar (first lis) amb)
-	      (let [res-eval (evaluar (first lis) amb)]
-	           (if (error? (first res-eval))
-   		           res-eval
-  	             (recur (next lis) (second res-eval))))))
+  [lis amb
+    (if (nil? (next lis))
+        (evaluar (first lis) amb)
+        (let [res-eval (evaluar (first lis) amb)]
+             (if (error? (first res-eval)
+                  res-eval)
+                 (recur (next lis) (second res-eval)))))])
 
 
 (defn evaluar-eval
@@ -429,10 +446,10 @@
   "Evalua una expresion `lambda`."
   [expre amb]
   (cond
-    (< (count expre) 3) ; si son el operador solo o con 1 unico argumento
-          (list (generar-mensaje-error :bad-body 'lambda (rest expre)) amb)
-    (not (seq? (second expre)))
-          (list (generar-mensaje-error :bad-params 'lambda expre) amb)
+    (< (count expre) 3 ; si son el operador solo o con 1 unico argumento
+          (list (generar-mensaje-error :bad-body 'lambda (rest expre)) amb))
+    (not (seq? (second expre)
+          (list (generar-mensaje-error :bad-params 'lambda expre) amb)))
     :else (list expre amb)))
 
 
@@ -449,10 +466,10 @@
   ([amb arch]
    (let [res (evaluar arch amb),
          nom-original (first res),
-         nuevo-amb (second res)]
+         nuevo-amb (second res)
          (if (error? nom-original)
              (do (imprimir nom-original) nuevo-amb)                 ; Mostrar el error
-             (let [nom-a-usar (generar-nombre-arch nom-original)]
+             (let [nom-a-usar (generar-nombre-arch nom-original)
                    (if (error? nom-a-usar)
                        (do (imprimir nom-a-usar) nuevo-amb)          ; Mostrar el error
                        (let [tmp (try
@@ -468,8 +485,8 @@
                                                     (imprimir (list (symbol ";loading") (symbol nom-original)))
                                                     (cargar-arch (second (evaluar (restaurar-bool (read in)) nuevo-amb)) in nom-original nom-a-usar)
                                                     (catch Exception e
-                                                       (imprimir (generar-mensaje-error :end-of-file 'list))))))]
-                                          (do (delete-file "scm-temp" true) ret))))))))))
+                                                       (imprimir (generar-mensaje-error :end-of-file 'list))))))
+                                          (do (delete-file "scm-temp" true) ret)])))))]))]))
   ([amb in nom-orig nom-usado]
    (try
      (cargar-arch (second (evaluar (restaurar-bool (read in)) amb)) in nom-orig nom-usado)
@@ -483,10 +500,10 @@
   [nom]
   (if (not (string? nom))
       (generar-mensaje-error :wrong-type-arg1 'string-length nom)
-      (let [n (lower-case nom)]
+      (let [n (lower-case nom)
             (if (nombre-arch-valido? n)
                 n
-                (str n ".scm")))))    ; Agrega '.scm' al final
+                (str n ".scm"))])))    ; Agrega '.scm' al final
 
 
 (defn nombre-arch-valido?
@@ -504,77 +521,81 @@
 
 (defn generar-mensaje-error
   "Devuelve un mensaje de error expresado como lista."
-  ([cod]
- 			(case cod 
-         :file-not-found (list (symbol ";ERROR:") 'No 'such 'file 'or 'directory)
-         :warning-paren (list (symbol ";WARNING:") 'unexpected (symbol "\")\"#<input-port 0>"))
-         ()))
-  ([cod fnc]
+  ([cod
+       (case cod 
+            :file-not-found (list (symbol ";ERROR:") 'No 'such 'file 'or 'directory)
+            :warning-paren (list (symbol ";WARNING:") 'unexpected (symbol "\")\"#<input-port 0>"))
+            ())])
+  ([cod fnc
     (cons (symbol ";ERROR:")
-    			(case cod
-         :end-of-file (list (symbol (str fnc ":")) 'end 'of 'file)
-         :error (list (symbol (str fnc)))
-         :io-ports-not-implemented (list (symbol (str fnc ":")) 'Use 'of 'I/O 'ports 'not 'implemented)
-         :only-proper-lists-implemented (list (symbol (str fnc ":")) 'Only 'proper 'lists 'are 'implemented)
-         :unbound-variable (list 'unbound (symbol "variable:") fnc)
-         :wrong-number-args (list 'Wrong 'number 'of 'args 'given fnc)
-         :wrong-number-args-oper (list (symbol (str fnc ":")) 'Wrong 'number 'of 'args 'given)
-         :wrong-number-args-prim-proc (list 'Wrong 'number 'of 'args 'given (symbol "#<primitive-procedure") (symbol (str fnc '>)))
-         :wrong-type-apply (list 'Wrong 'type 'to 'apply fnc)
-         ())))
-  ([cod fnc nom-arg]
-    (cons (symbol ";ERROR:") (cons (symbol (str fnc ":"))
-    			(case cod
-     			 :bad-body (list 'bad 'body nom-arg)
-     			 :bad-else-clause (list 'bad 'ELSE 'clause nom-arg)
-      			:bad-or-missing (list 'bad 'or 'missing 'clauses nom-arg)
-     			 :bad-params (list 'Parameters 'are 'implemented 'only 'as 'lists nom-arg)
-      			:bad-variable (list 'bad 'variable nom-arg)
-     			 :missing-or-extra (list 'missing 'or 'extra 'expression nom-arg)
-     			 :wrong-type-arg (list 'Wrong 'type 'in 'arg nom-arg)
-     			 :wrong-type-arg1 (list 'Wrong 'type 'in 'arg1 nom-arg)
-     			 :wrong-type-arg2 (list 'Wrong 'type 'in 'arg2 nom-arg)
-         ())))))
+          (case cod
+            :end-of-file (list (symbol (str fnc ":")) 'end 'of 'file)
+            :error (list (symbol (str fnc)))
+            :io-ports-not-implemented (list (symbol (str fnc ":")) 'Use 'of 'I/O 'ports 'not 'implemented)
+            :only-proper-lists-implemented (list (symbol (str fnc ":")) 'Only 'proper 'lists 'are 'implemented)
+            :unbound-variable (list 'unbound (symbol "variable:") fnc)
+            :wrong-number-args (list 'Wrong 'number 'of 'args 'given fnc)
+            :wrong-number-args-oper (list (symbol (str fnc ":")) 'Wrong 'number 'of 'args 'given)
+            :wrong-number-args-prim-proc (list 'Wrong 'number 'of 'args 'given (symbol "#<primitive-procedure") (symbol (str fnc '>)))
+            :wrong-type-apply (list 'Wrong 'type 'to 'apply fnc)
+            ()))])
+  ([cod fnc nom-arg
+    (cons (symbol ";ERROR:") (cons (symbol (str fnc ":")))
+          (case cod
+            :bad-body (list 'bad 'body nom-arg)
+            :bad-else-clause (list 'bad 'ELSE 'clause nom-arg)
+            :bad-or-missing (list 'bad 'or 'missing 'clauses nom-arg)
+            :bad-params (list 'Parameters 'are 'implemented 'only 'as 'lists nom-arg)
+            :bad-variable (list 'bad 'variable nom-arg)
+            :missing-or-extra (list 'missing 'or 'extra 'expression nom-arg)
+            :wrong-type-arg (list 'Wrong 'type 'in 'arg nom-arg)
+            :wrong-type-arg1 (list 'Wrong 'type 'in 'arg1 nom-arg)
+            :wrong-type-arg2 (list 'Wrong 'type 'in 'arg2 nom-arg)
+            ()))]))
 
 ; FUNCIONES AXILIARES GENERALES
-
-(defn toUppercase [elem](
-  cond
-    (or (string? elem) (char? elem)) (.toUpperCase elem)
-    (symbol? elem) (symbol (.toUpperCase (str elem)))
-    :else elem
-))
-
-(defn toSchemeBoolean [elem](
-  cond
-    (= elem true) (symbol "#t")
-    (= elem false) (symbol "#f")
-    :else nil
-))
 
 (defn _indexOf [clave iterable index length]
   (cond
     (= length index) -1 
     (igual? (nth iterable index) clave) index
-    :else (_indexOf clave iterable (+ index 1) length)
-  )
-)
+    :else (_indexOf clave iterable (+ index 1) length)))
+  
 
-(defn indexOf [value iterable]
-  (_indexOf value iterable 0 (count iterable))
-)
+
+(defn indexOf [iterable value]
+  (_indexOf value iterable 0 (count iterable)))
+
+
+(defn toUppercase [elem]()
+  cond
+    (or (string? elem) (char? elem)) (.toUpperCase elem)
+    (symbol? elem) (symbol (.toUpperCase (str elem)))
+    :else elem)
+
+
+(defn toSchemeBoolean [elem]()
+  cond
+    (= elem true) (symbol "#t")
+    (= elem false) (symbol "#f")
+    :else nil)
+
 
 (defn first-nan [the-list]
   (let [index (indexOf (map number? the-list) false)]
-    (nth the-list index)
-  )
-)
+    (nth the-list index)))
+  
+
 
 (defn first-nal [the-list]
-  (let [index (indexOf (map list? the-list) false)]
-    (nth the-list index)
-  )
-)
+  (let [index (indexOf (map seq? the-list) false)]
+    (nth the-list index)))
+  
+
+
+(defn _evaluar [expre amb n]
+  (first (evaluar (nth expre n) amb)))
+
 
 ; FUNCIONES QUE DEBEN SER IMPLEMENTADAS PARA COMPLETAR EL INTERPRETE DE SCHEME (ADEMAS DE COMPLETAR `EVALUAR` Y `APLICAR-FUNCION-PRIMITIVA`):
 
@@ -586,21 +607,22 @@
 ; user=> (leer-entrada)
 ; 123
 ; "123"
+                                 
 (defn _leer-entrada [entrada]
   (let [entrada2 (str entrada (read))] 
     (if (= 0 (verificar-parentesis entrada))
       entrada2
-      (_leer-entrada entrada2)
-    ) 
-  )
-)
+      (_leer-entrada entrada2))))
+     
+  
+
 
 (defn leer-entrada
   "Lee una cadena desde la terminal/consola. Si los parentesis no estan correctamente balanceados al presionar Enter/Intro,
    se considera que la cadena ingresada es una subcadena y el ingreso continua. De lo contrario, se la devuelve completa."
    []
-   (_leer-entrada "")
-)
+  (_leer-entrada ""))
+
 
 ; user=> (verificar-parentesis "(hola 'mundo")
 ; 1
@@ -612,29 +634,29 @@
 ; -1
 ; user=> (verificar-parentesis "(hola '(mundo) )")
 ; 0
-(defn encodear-parentesis [letter](
+(defn encodear-parentesis [letter]()
   cond
-  	(= letter \() 1
-  	(= letter \)) -1
-  	:else 0
-))
+    (= letter \() 1
+    (= letter \)) -1
+    :else 0)
 
-(defn _verificar-parentesis [seq-entrada contador i count-entrada] (
+
+(defn _verificar-parentesis [seq-entrada contador i count-entrada] ()
   cond
     (< contador 0)  -1
     (= i count-entrada) contador
-    :else (
+    :else ()
       _verificar-parentesis
         seq-entrada
         (+ contador (encodear-parentesis (nth seq-entrada i)))
         (+ i 1)
-        count-entrada
-    )
-))
+        count-entrada)
+    
 
-(defn verificar-parentesis [entrada] (
-    _verificar-parentesis (seq entrada) 0 0 (count entrada)
-))
+
+(defn verificar-parentesis [entrada] ()
+    _verificar-parentesis (seq entrada) 0 0 (count entrada))
+
 
 ; user=> (actualizar-amb '(a 1 b 2 c 3) 'd 4)
 ; (a 1 b 2 c 3 d 4)
@@ -645,41 +667,42 @@
 ; user=> (actualizar-amb () 'b 7)
 ; (b 7)
 (defn reemplazar [lista indice valor]
-  (let [n (count lista)] (cond
-      (< indice n) (concat
+  (let [n (count lista)] (cond)
+      (< indice n) (concat)
         (take indice lista)
         (list valor)
         (take-last (- (- n 1) indice) lista)
-      )
-      :else lista
-    )
-  )
-)
+      
+      :else lista))
+    
+  
+
 
 (defn actualizar-amb [amb clave valor]
   (cond
     (error? valor) amb
-    :else (let [indice (indexOf amb clave)]
+    :else (let [indice (indexOf amb clave)])
       (cond
         (= indice -1) (concat amb (list clave valor))
-        :else (reemplazar amb (+ indice 1) valor)
-      )
-    )
-  )
-)
+        :else (reemplazar amb (+ indice 1) valor))))
+      
+    
+  
+
 
 ; user=> (buscar 'c '(a 1 b 2 c 3 d 4 e 5))
 ; 3
 ; user=> (buscar 'f '(a 1 b 2 c 3 d 4 e 5))
 ; (;ERROR: unbound variable: f)
-(defn buscar [clave iterable] 
-  (let [index (indexOf iterable clave)]
+
+(defn buscar [clave amb] 
+  (let [index (indexOf amb clave)]
     (cond
       (= index -1) (generar-mensaje-error :unbound-variable clave)
-      :else (nth iterable (+ index 1))
-    )
-  )
-)
+      :else (nth amb (+ index 1)))))
+    
+  
+
 
 ; user=> (error? (list (symbol ";ERROR:") 'mal 'hecho))
 ; true
@@ -689,13 +712,10 @@
 ; true
 (defn error? [elem]
   (cond
-    (list? elem) (
-      let [first_elem (nth elem 0)]
-      (or (= first_elem (symbol ";ERROR:")) (= first_elem (symbol ";WARNING:")))
-    )
-    :else false
-  )
-)
+    (seq? elem) (let [first_elem (first elem)]
+                  (or (igual? first_elem (symbol ";ERROR:")) (igual? first_elem (symbol ";WARNING:"))))
+    :else false))
+
 
 ; user=> (proteger-bool-en-str "(or #F #f #t #T)")
 ; "(or %F %f %t %T)"
@@ -710,25 +730,25 @@
      (clojure.string/replace value #"#f" "%f")
      #"#t" "%t")
     #"#T" "%T")
-   #"#F" "%F")
-)
+   #"#F" "%F"))
+
 
 ; user=> (restaurar-bool (read-string (proteger-bool-en-str "(and (or #F #f #t #T) #T)")))
 ; (and (or #F #f #t #T) #T)
 ; user=> (restaurar-bool (read-string "(and (or %F %f %t %T) %T)") )
 ; (and (or #F #f #t #T) #T)
 (defn restaurar-bool [value]
-  (if (list? value) 
+  (if (seq? value) 
     (map restaurar-bool value)
     (cond
       (= value (symbol "%t")) (symbol "#t")
-      (= value (symbol "%T")) (symbol "#T")
-      (= value (symbol "%f")) (symbol "#f")
-      (= value (symbol "%F")) (symbol "#F")
-      :else value
-    )
-  )
-)
+      (= value (symbol"%T")) (symbol "#T")
+      (= value (symbol"%f")) (symbol "#f")
+      (= value (symbol"%F")) (symbol "#F")
+      :else value)))
+    
+  
+
 
 ; user=> (igual? 'if 'IF)
 ; true
@@ -740,12 +760,11 @@
 ; false
 ; user=> (igual? 6 "6")
 ; false
-(defn igual? [value1 value2] (
+(defn igual? [value1 value2] ()
   cond
-    (not= (type value1) (type value2)) false
-    (symbol? value1) (= (.toUpperCase (str value2)) (.toUpperCase (str value1)))
-    :else (= value2 value1)
-))
+  (and (symbol? value1) (symbol? value2))  (= (.toUpperCase (str value2)) (.toUpperCase (str value1)))
+  :else (= value2 value1))
+
 
 ; user=> (fnc-append '( (1 2) (3) (4 5) (6 7)))
 ; (1 2 3 4 5 6 7)
@@ -755,10 +774,10 @@
 ; (;ERROR: append: Wrong type in arg A)
 (defn fnc-append [expre] 
   (cond
-    (every? list? expre) (reduce concat expre)
-    :else (generar-mensaje-error :wrong-type-arg 'append (first-nal expre))
-  )
-)
+    (every? seq? expre) (reduce concat expre)
+    :else (generar-mensaje-error :wrong-type-arg 'append (first-nal expre))))
+  
+
 
 ; user=> (fnc-equal? ())
 ; #t
@@ -776,19 +795,19 @@
 ; #t
 ; user=> (fnc-equal? '(1 1 2 1))
 ; #f
-(defn _fnc-equal [iterable i largo] (
+(defn _fnc-equal [iterable i largo] ()
   cond
     (= i (- largo 1)) true
     (not (igual? (nth iterable (+ i 1)) (nth iterable i))) false
-    :else (_fnc-equal iterable (+ 1 i) largo)
-))
+    :else (_fnc-equal iterable (+ 1 i) largo))
+
 
 (defn fnc-equal? [iterable]
   (if (empty? iterable)
     (toSchemeBoolean true)
-    (toSchemeBoolean (_fnc-equal iterable 0 (count iterable)))
-  )
-)
+    (toSchemeBoolean (_fnc-equal iterable 0 (count iterable)))))
+  
+
 
 ; user=> (fnc-read ())
 ; (hola
@@ -806,12 +825,9 @@
    [arg]
    (let [cant (count arg)]
     (cond
-      (= cant 0) (leer-entrada)
+      (= cant 0) (restaurar-bool (read-string (proteger-bool-en-str (leer-entrada))))
       (= cant 1) (generar-mensaje-error :io-ports-not-implemented 'read)
-      :else (generar-mensaje-error :wrong-number-args-prim-proc 'read)
-    )
-   )
-)
+      :else (generar-mensaje-error :wrong-number-args-prim-proc 'read))))
 
 ; user=> (fnc-sumar ())
 ; 0
@@ -829,13 +845,12 @@
 ; (;ERROR: +: Wrong type in arg2 A)
 ; user=> (fnc-sumar '(3 4 A 6))
 ; (;ERROR: +: Wrong type in arg2 A)
-(defn fnc-sumar [numbers] (
+(defn fnc-sumar [numbers] ()
   cond
     (empty? numbers) 0
     (every? number? numbers) (reduce + numbers)
-    (number? (nth numbers 0)) (generar-mensaje-error :wrong-type-arg1 (first-nan numbers))
-    :else (generar-mensaje-error :wrong-type-arg2 (first-nan numbers))
-))
+    (number? (first numbers)) (generar-mensaje-error :wrong-type-arg1 (first-nan numbers))
+    :else (generar-mensaje-error :wrong-type-arg2 (first-nan numbers)))
 
 ; user=> (fnc-restar ())
 ; (;ERROR: -: Wrong number of args given)
@@ -853,13 +868,12 @@
 ; (;ERROR: -: Wrong type in arg2 A)
 ; user=> (fnc-restar '(3 4 A 6))
 ; (;ERROR: -: Wrong type in arg2 A)
-(defn fnc-restar [numbers] (
+(defn fnc-restar [numbers] ()
   cond
     (empty? numbers) (generar-mensaje-error :wrong-number-args-oper '-)
     (every? number? numbers) (reduce - numbers)
-    (number? (nth numbers 0)) (generar-mensaje-error :wrong-type-arg1 (first-nan numbers))
-    :else (generar-mensaje-error :wrong-type-arg2 (first-nan numbers))
-))
+    (number? (first numbers)) (generar-mensaje-error :wrong-type-arg1 (first-nan numbers))
+    :else (generar-mensaje-error :wrong-type-arg2 (first-nan numbers)))
 
 ; user=> (fnc-menor ())
 ; #t
@@ -881,13 +895,12 @@
 ; (;ERROR: <: Wrong type in arg2 A)
 ; user=> (fnc-menor '(1 2 A 4))
 ; (;ERROR: <: Wrong type in arg2 A)
-(defn fnc-menor [numbers] (
+(defn fnc-menor [numbers] ()
   cond
     (empty? numbers) (toSchemeBoolean true)
     (every? number? numbers) (toSchemeBoolean (apply < numbers))
-    (number? (nth numbers 0)) (generar-mensaje-error :wrong-type-arg1 (first-nan numbers))
-    :else (generar-mensaje-error :wrong-type-arg2 (first-nan numbers))
-))
+    (number? (first numbers)) (generar-mensaje-error :wrong-type-arg1 (first-nan numbers))
+    :else (generar-mensaje-error :wrong-type-arg2 (first-nan numbers)))
 
 ; user=> (fnc-mayor ())
 ; #t
@@ -909,13 +922,12 @@
 ; (;ERROR: >: Wrong type in arg2 A)
 ; user=> (fnc-mayor '(3 2 A 1))
 ; (;ERROR: >: Wrong type in arg2 A)
-(defn fnc-mayor [numbers] (
+(defn fnc-mayor [numbers] ()
   cond
     (empty? numbers) (toSchemeBoolean true)
     (every? number? numbers) (toSchemeBoolean (apply > numbers))
-    (number? (nth numbers 0)) (generar-mensaje-error :wrong-type-arg1 (first-nan numbers))
-    :else (generar-mensaje-error :wrong-type-arg2 (first-nan numbers))
-))
+    (number? (first numbers)) (generar-mensaje-error :wrong-type-arg1 (first-nan numbers))
+    :else (generar-mensaje-error :wrong-type-arg2 (first-nan numbers)))
 
 ; user=> (fnc-mayor-o-igual ())
 ; #t
@@ -941,7 +953,7 @@
   (cond
     (empty? numbers) (toSchemeBoolean true)
     (every? number? numbers) (apply > numbers)
-    (number? (nth numbers 0)) (generar-mensaje-error :wrong-type-arg1 (first-nan numbers))
+    (number? (first numbers)) (generar-mensaje-error :wrong-type-arg1 (first-nan numbers))
     :else (generar-mensaje-error :wrong-type-arg2 (first-nan numbers))))
 
 ; user=> (evaluar-escalar 32 '(x 6 y 11 z "hola"))
@@ -954,17 +966,13 @@
 ; ("hola" (x 6 y 11 z "hola"))
 ; user=> (evaluar-escalar 'n '(x 6 y 11 z "hola"))
 ; ((;ERROR: unbound variable: n) (x 6 y 11 z "hola"))
-(defn evaluar-escalar [escalar iterable]
+(defn evaluar-escalar [expre amb]
   (cond
-    (symbol? escalar) (let [indice (indexOf iterable escalar)]
-      (cond
-        (= indice -1) (concat (generar-mensaje-error :unbound-variable escalar) (list iterable))
-        :else (concat (list (nth iterable (+ 1 indice))) (list iterable))
-      )
-    )
-    :else (concat (list escalar) (list iterable))
-  )
-)
+    (string? expre) (list expre amb)
+    (igual? expre (symbol "#f")) (list "HOLSSSSSSSSSSSSS" amb)
+    (igual? expre (symbol "#f")) (list "HOLSSSSSSSSSSSSS" amb)
+    (symbol? expre) (list (buscar expre amb) amb)
+    :else (list expre amb)))
 
 ; user=> (evaluar-define '(define x 2) '(x 1))
 ; (#<unspecified> (x 2))
@@ -982,25 +990,33 @@
 ; ((;ERROR: define: bad variable (define () 2)) (x 1))
 ; user=> (evaluar-define '(define 2 x) '(x 1))
 ; ((;ERROR: define: bad variable (define 2 x)) (x 1))
-(defn _evaluar-define [expre amb] 
-   (concat
-    amb
-    (list (nth (nth expre 1) 0))
-    (list (list 'lambda (list (nth (nth expre 1) 1)) (nth expre 2))))
-)
+(defn define-lambda [expre amb]
+  (let [nombre (first (nth expre 1))
+        parametros (rest (nth expre 1))
+        funcion (nth expre 2)]
+    (list
+     (symbol "#<unspecified>")
+     (concat
+      amb
+      (list nombre)
+      (list (list 'lambda parametros funcion))))))
 
+(defn define-macro [expre amb]
+  (list (symbol "#<unspecified>")
+        (actualizar-amb
+         amb
+         (nth expre 1)
+         (_evaluar expre amb 2))))
+            
 (defn evaluar-define
   "Evalua una expresion `define`. Devuelve una lista con el resultado y un ambiente actualizado con la definicion."
   [expre amb]
-  (cond
-    (and (list? amb) (= 3 (count expre)) (= (symbol "define") (nth expre 0)))
-        (cond
-          (symbol? (nth expre 1)) (if (= (nth expre 1) (nth amb 0)) (pop expre) amb) 
-          (and (list? (nth expre 1)) (> 0 (count (nth expre 1)))) (_evaluar-define expre amb)
-          :else (list (generar-mensaje-error :bad-variable 'define expre) amb))
-    :else (list (generar-mensaje-error :missing-or-extra 'define expre) amb)    
-  )
-)
+   (if (= 3 (count expre))
+     (if (seq? (nth expre 1))
+       (define-lambda expre amb)
+       (define-macro expre amb))
+
+     (list (generar-mensaje-error :missing-or-extra 'define expre) amb)))
 
 ; user=> (evaluar-if '(if 1 2) '(n 7))
 ; (2 (n 7))
@@ -1021,20 +1037,16 @@
 (defn evaluar-if [expre amb]
   (let [len (count expre)]
     (cond
-      (= len 3)
-        (cond
-          (= (nth expre 1) (symbol "#f")) (list (symbol "#<unspecified>") amb)
-          :else (evaluar (nth expre 2) amb)
-        )
-      (= len 4)
-        (cond
-          (= (nth expre 1) (symbol "#f")) (evaluar (nth expre 3) amb)
-          :else (evaluar (nth expre 2) amb)        
-        )
-      :else (list (generar-mensaje-error :missing-or-extra 'if expre) amb)
-    )
-  )
-)
+      (= len 3
+         (cond
+           (igual? (_evaluar expre amb 1) (symbol "#t")) (evaluar (nth expre 2) amb)
+           :else (list (symbol "#<unspecified>") amb)))
+      (= len 4
+         (cond
+           (igual? (_evaluar expre amb 1) (symbol "#t")) (evaluar (nth expre 2) amb)
+           :else (evaluar (nth expre 3) amb)))
+
+      :else (list (generar-mensaje-error :missing-or-extra 'if expre) amb))))
 
 ; user=> (evaluar-or (list 'or) (list (symbol "#f") (symbol "#f") (symbol "#t") (symbol "#t")))
 ; (#f (#f #f #t #t))
@@ -1046,26 +1058,21 @@
 ; (5 (#f #f #t #t))
 ; user=> (evaluar-or (list 'or (symbol "#f")) (list (symbol "#f") (symbol "#f") (symbol "#t") (symbol "#t")))
 ; (#f (#f #f #t #t))
-(defn getIfNotFalse [iterable i len]
+(defn _or [expre amb len i]
   (cond
-    (= i (- len 1)) (nth iterable i)
+    (=  i len) (list (symbol "#f") amb)
     :else
-    (cond
-      (= (symbol "#f") (nth iterable i)) (getIfNotFalse iterable (+ 1 i) len)
-        
-      :else (nth iterable i)
-    )
-  )
-)
+    (let [val (_evaluar expre amb i)]
+      (if
+       (igual? val (symbol "#f")
+               (_or expre amb len (+ i 1))
+               (list val amb))))))
 
-(defn evaluar-or [toeval amb]
-  (let [len (count toeval)]
+(defn evaluar-or [expre amb]
+  (let [len (count expre)]
     (cond
-      (= len 1) (list (symbol "#f") amb)
-      :else (evaluar-escalar (getIfNotFalse toeval 1 len) amb)
-    )
-  )
-)
+      (< len 2) (list (symbol "#f") amb)
+      :else (_or expre amb len 1))))
 
 ; user=> (evaluar-set! '(set! x 1) '(x 0))
 ; (#<unspecified> (x 1))
@@ -1078,17 +1085,10 @@
 ; user=> (evaluar-set! '(set! 1 2) '(x 0))
 ; ((;ERROR: set!: bad variable 1) (x 0))
 (defn evaluar-set! [expre amb]
-  (let [len (count expre)]
+  (if (= 3 (count expre))
     (cond
-      (= len 3)
-        (cond 
-          (not (symbol? (nth expre 1))) (list (generar-mensaje-error :bad-variable 'set! (nth expre 1)) amb)
-          (= -1 (indexOf (take-nth 2 amb) (nth expre 1))) (list (generar-mensaje-error :unbound-variable (nth expre 1)) amb)
-          :else (list (symbol "#<unspecified>") (actualizar-amb amb (nth expre 1) (nth expre 2)))
-        )
-      :else (list (generar-mensaje-error :missing-or-extra 'set! expre) amb)
-    )
-  )
-)
-
-; Al terminar de cargar el archivo en el REPL de Clojure, se debe devolver true.
+      (not (symbol? (nth expre 1))) (list (generar-mensaje-error :bad-variable 'set! (nth expre 1)) amb)
+      (= (indexOf amb (nth expre 1)) -1) (list (generar-mensaje-error :unbound-variable (nth expre 1)) amb)
+      :else (list (symbol "#<unspecified>")
+                  (actualizar-amb amb (nth expre 1) (_evaluar expre amb 2))))
+    (list (generar-mensaje-error :missing-or-extra 'set! expre) amb)))

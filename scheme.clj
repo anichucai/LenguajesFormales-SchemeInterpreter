@@ -212,6 +212,7 @@
     (igual? fnc 'null?)   (fnc-null? lae) ;funciona (null? 5)
     (= fnc '+)            (fnc-sumar lae) ;funciona (+ 1 2 3 )
     (= fnc '-)            (fnc-restar lae) ;funciona (+ 1 2 3 )
+    
 
     (igual? fnc 'append)  (fnc-append lae) ;funciona (append (list 1 2) (list 3 4)) (append '(1 2 3) '(2 3 4))
     (igual? fnc 'equal?)  (fnc-equal? lae) ;funciona (equal? 2 2 2 2 2 3)
@@ -592,6 +593,9 @@
   )
 )
 
+(defn _evaluar [expre amb n]
+  (first (evaluar (nth expre n) amb)))
+
 ; FUNCIONES QUE DEBEN SER IMPLEMENTADAS PARA COMPLETAR EL INTERPRETE DE SCHEME (ADEMAS DE COMPLETAR `EVALUAR` Y `APLICAR-FUNCION-PRIMITIVA`):
 
 ; LEER-ENTRADA:
@@ -616,7 +620,6 @@
   "Lee una cadena desde la terminal/consola. Si los parentesis no estan correctamente balanceados al presionar Enter/Intro,
    se considera que la cadena ingresada es una subcadena y el ingreso continua. De lo contrario, se la devuelve completa."
    []
-   ;(restaurar-bool (read-string (proteger-bool-en-str (_leer-entrada ""))))
   (_leer-entrada "")
 )
 
@@ -737,10 +740,10 @@
   (if (seq? value) 
     (map restaurar-bool value)
     (cond
-      (= value "%t") (symbol "#t")
-      (= value "%T") (symbol "#T")
-      (= value "%f") (symbol "#f")
-      (= value "%F") (symbol "#F")
+      (= value (symbol "%t")) (symbol "#t")
+      (= value (symbol"%T")) (symbol "#T")
+      (= value (symbol"%f")) (symbol "#f")
+      (= value (symbol"%F")) (symbol "#F")
       :else value
     )
   )
@@ -821,7 +824,7 @@
    [arg]
    (let [cant (count arg)]
     (cond
-      (= cant 0) (restaurar-bool (read-string (proteger-bool-en-str leer-entrada)))
+      (= cant 0) (restaurar-bool (read-string (proteger-bool-en-str (leer-entrada))))
       (= cant 1) (generar-mensaje-error :io-ports-not-implemented 'read)
       :else (generar-mensaje-error :wrong-number-args-prim-proc 'read)
     )
@@ -997,11 +1000,9 @@
 ; ((;ERROR: define: bad variable (define () 2)) (x 1))
 ; user=> (evaluar-define '(define 2 x) '(x 1))
 ; ((;ERROR: define: bad variable (define 2 x)) (x 1))
-(defn ret-env [env] (list (symbol "#<unspecified>") env))
-
 (defn define-lambda [expre amb]
   (let [nombre (first (nth expre 1))
-        parametros (rest (nth expre 1))
+        parametros (rest (nth expre 1)),
         funcion (nth expre 2)]
     (list
      (symbol "#<unspecified>")
@@ -1010,14 +1011,15 @@
       (list nombre)
       (list (list 'lambda parametros funcion)))
           
-    )))
+    ))
+)
 
 (defn define-macro [expre amb]
-  (let [index (indexOf amb (nth expre 1))]
-    (if (= index -1)
-      (ret-env (concat amb (list (nth expre 1)) (list (nth expre 2))))
-      (ret-env (actualizar-amb amb (nth expre 1) (nth expre 2)))))
-)
+  (list (symbol "#<unspecified>")
+        (actualizar-amb
+         amb
+         (nth expre 1)
+         (nth expre 2))))
 
 (defn evaluar-define
   "Evalua una expresion `define`. Devuelve una lista con el resultado y un ambiente actualizado con la definicion."
@@ -1049,23 +1051,19 @@
 ; user=> (evaluar-if '(if 1) '(n 7))
 ; ((;ERROR: if: missing or extra expression (if 1)) (n 7))
 (defn evaluar-if [expre amb]
-  (let [len (count expre)]
+  (let [len (count expre)
+        condicion (_evaluar expre amb 1)
+        valorSiSeCumple (evaluar (nth expre 2) amb)]
     (cond
-      (= len 3)
-        (cond
-          (igual? (nth expre 1) (symbol "#f")) (list (symbol "#<unspecified>") amb)
-          :else (evaluar (nth expre 2) amb)
-        )
-      (= len 4)
-        (cond
-          (igual? (first (evaluar (nth expre 1) amb)) (symbol "#f"))
-          (evaluar (nth expre 3) amb)
-          :else (evaluar (nth expre 2) amb)        
-        )
-      :else (list (generar-mensaje-error :missing-or-extra 'if expre) amb)
-    )
-  )
-)
+      (= len 3) (if
+                 (igual? condicion (symbol "#t"))
+                  valorSiSeCumple
+                  (list (symbol "#<unspecified>") amb))
+      (= len 4) (if
+                 (igual? condicion (symbol "#t"))
+                  valorSiSeCumple
+                  (evaluar (nth expre 3) amb))
+      :else (list (generar-mensaje-error :missing-or-extra 'if expre) amb))))
 
 ; user=> (evaluar-or (list 'or) (list (symbol "#f") (symbol "#f") (symbol "#t") (symbol "#t")))
 ; (#f (#f #f #t #t))
@@ -1077,23 +1075,20 @@
 ; (5 (#f #f #t #t))
 ; user=> (evaluar-or (list 'or (symbol "#f")) (list (symbol "#f") (symbol "#f") (symbol "#t") (symbol "#t")))
 ; (#f (#f #f #t #t))
-(defn getIfNotFalse [iterable i len amb]
-  
-      (cond
-        (=  i len) (list (symbol "#f") amb)
-        :else
-        (let [val (first (evaluar (nth iterable i) amb))]
-          (if
-           (igual? val (symbol "#f"))
-            (getIfNotFalse iterable (+ i 1) len amb)
-            (list val amb))))
-)
+(defn _or [expre amb i len]
+  (cond
+    (=  i len) (list (symbol "#f") amb)
+    :else (let [valor (_eval expre amb i)]
+            (if
+             (igual? valor (symbol "#f"))
+              (_or expre amb len (+ i 1))
+              (list valor amb)))))
 
 (defn evaluar-or [expre amb]
   (let [len (count expre)]
     (cond
       (< len 2) (list (symbol "#f") amb)
-      :else (getIfNotFalse expre 1 len amb)
+      :else (_or expre amb len 1)
     )
   )
 )
@@ -1108,21 +1103,12 @@
 ; ((;ERROR: set!: missing or extra expression (set! x 1 2)) (x 0))
 ; user=> (evaluar-set! '(set! 1 2) '(x 0))
 ; ((;ERROR: set!: bad variable 1) (x 0))
-
-(defn evaluar-recursivo [expre amb]
-  (first (evaluar expre amb))
-)
-
 (defn evaluar-set! [expre amb]
-  (let [index (indexOf amb (nth expre 1))] 
-    
+  (let [clave (nth expre 1)
+        valor (_evaluar expre amb 2)]
     (if (= 3 (count expre))
       (cond
-        (not (symbol? (nth expre 1))) (list (generar-mensaje-error :bad-variable 'set! (nth expre 1)) amb)
-        (= index -1) (list (generar-mensaje-error :unbound-variable (nth expre 1)) amb)
-        :else (ret-env (actualizar-amb amb (nth expre 1) (evaluar-recursivo (nth expre 2) amb))))
-      (list (generar-mensaje-error :missing-or-extra 'set! expre) amb)
-    )
-  )
-)
-; Al terminar de cargar el archivo en el REPL de Clojure, se debe devolver true.
+        (not (symbol? valor)) (list (generar-mensaje-error :bad-variable 'set! clave) amb)
+        (= (indexOf amb valor) -1) (list (generar-mensaje-error :unbound-variable clave) amb)
+        :else (list (symbol "#<unspecified>") (actualizar-amb amb clave valor)))
+      (list (generar-mensaje-error :missing-or-extra 'set! expre) amb))))
