@@ -1092,3 +1092,13 @@
       :else (list (symbol "#<unspecified>")
                   (actualizar-amb amb (nth expre 1) (_evaluar expre amb 2))))
     (list (generar-mensaje-error :missing-or-extra 'set! expre) amb)))
+
+(defn evaluar-set! [expre amb]
+  (let [clave (nth expre 1)
+        valor (_evaluar expre amb 2)]
+    (if (= 3 (count expre))
+      (cond
+        (not (symbol? valor)) (list (generar-mensaje-error :bad-variable 'set! clave) amb)
+        (= (indexOf amb valor) -1) (list (generar-mensaje-error :unbound-variable clave) amb)
+        :else (list (symbol "#<unspecified>") (actualizar-amb amb clave valor)))
+      (list (generar-mensaje-error :missing-or-extra 'set! expre) amb))))

@@ -557,41 +557,30 @@
 
 (defn _indexOf [clave iterable index length]
   (cond
-    (= length index) -1 
+    (= length index) -1
     (igual? (nth iterable index) clave) index
-    :else (_indexOf clave iterable (+ index 1) length)
-  )
-)
+    :else (_indexOf clave iterable (+ index 1) length)))
 
 (defn indexOf [iterable value]
-  (_indexOf value iterable 0 (count iterable))
-)
+  (_indexOf value iterable 0 (count iterable)))
 
-(defn toUppercase [elem](
-  cond
-    (or (string? elem) (char? elem)) (.toUpperCase elem)
-    (symbol? elem) (symbol (.toUpperCase (str elem)))
-    :else elem
-))
+(defn toUppercase [elem] (cond
+                           (or (string? elem) (char? elem)) (.toUpperCase elem)
+                           (symbol? elem) (symbol (.toUpperCase (str elem)))
+                           :else elem))
 
-(defn toSchemeBoolean [elem](
-  cond
-    (= elem true) (symbol "#t")
-    (= elem false) (symbol "#f")
-    :else nil
-))
+(defn toSchemeBoolean [elem] (cond
+                               (= elem true) (symbol "#t")
+                               (= elem false) (symbol "#f")
+                               :else nil))
 
 (defn first-nan [the-list]
   (let [index (indexOf (map number? the-list) false)]
-    (nth the-list index)
-  )
-)
+    (nth the-list index)))
 
 (defn first-nal [the-list]
   (let [index (indexOf (map seq? the-list) false)]
-    (nth the-list index)
-  )
-)
+    (nth the-list index)))
 
 (defn _evaluar [expre amb n]
   (first (evaluar (nth expre n) amb)))
@@ -608,20 +597,16 @@
 ; "123"
                                  
 (defn _leer-entrada [entrada]
-  (let [entrada2 (str entrada (read))] 
+  (let [entrada2 (str entrada (read))]
     (if (= 0 (verificar-parentesis entrada))
       entrada2
-      (_leer-entrada entrada2)
-    ) 
-  )
-)
+      (_leer-entrada entrada2))))
 
 (defn leer-entrada
   "Lee una cadena desde la terminal/consola. Si los parentesis no estan correctamente balanceados al presionar Enter/Intro,
    se considera que la cadena ingresada es una subcadena y el ingreso continua. De lo contrario, se la devuelve completa."
-   []
-  (_leer-entrada "")
-)
+  []
+  (_leer-entrada ""))
 
 ; user=> (verificar-parentesis "(hola 'mundo")
 ; 1
@@ -633,29 +618,21 @@
 ; -1
 ; user=> (verificar-parentesis "(hola '(mundo) )")
 ; 0
-(defn encodear-parentesis [letter](
-  cond
-  	(= letter \() 1
-  	(= letter \)) -1
-  	:else 0
-))
+(defn encodear-parentesis [letter](cond
+                                    (= letter \() 1
+                                    (= letter \)) -1
+                                    :else 0))
 
-(defn _verificar-parentesis [seq-entrada contador i count-entrada] (
-  cond
-    (< contador 0)  -1
-    (= i count-entrada) contador
-    :else (
-      _verificar-parentesis
-        seq-entrada
-        (+ contador (encodear-parentesis (nth seq-entrada i)))
-        (+ i 1)
-        count-entrada
-    )
-))
+(defn _verificar-parentesis [seq-entrada contador i count-entrada] (cond
+                                                                     (< contador 0)  -1
+                                                                     (= i count-entrada) contador
+                                                                     :else (_verificar-parentesis
+                                                                            seq-entrada
+                                                                            (+ contador (encodear-parentesis (nth seq-entrada i)))
+                                                                            (+ i 1)
+                                                                            count-entrada)))
 
-(defn verificar-parentesis [entrada] (
-    _verificar-parentesis (seq entrada) 0 0 (count entrada)
-))
+(defn verificar-parentesis [entrada] (_verificar-parentesis (seq entrada) 0 0 (count entrada)))
 
 ; user=> (actualizar-amb '(a 1 b 2 c 3) 'd 4)
 ; (a 1 b 2 c 3 d 4)
@@ -667,27 +644,19 @@
 ; (b 7)
 (defn reemplazar [lista indice valor]
   (let [n (count lista)] (cond
-      (< indice n) (concat
-        (take indice lista)
-        (list valor)
-        (take-last (- (- n 1) indice) lista)
-      )
-      :else lista
-    )
-  )
-)
+                           (< indice n) (concat
+                                         (take indice lista)
+                                         (list valor)
+                                         (take-last (- (- n 1) indice) lista))
+                           :else lista)))
 
 (defn actualizar-amb [amb clave valor]
   (cond
     (error? valor) amb
     :else (let [indice (indexOf amb clave)]
-      (cond
-        (= indice -1) (concat amb (list clave valor))
-        :else (reemplazar amb (+ indice 1) valor)
-      )
-    )
-  )
-)
+            (cond
+              (= indice -1) (concat amb (list clave valor))
+              :else (reemplazar amb (+ indice 1) valor)))))
 
 ; user=> (buscar 'c '(a 1 b 2 c 3 d 4 e 5))
 ; 3
@@ -1002,37 +971,30 @@
 ; ((;ERROR: define: bad variable (define 2 x)) (x 1))
 (defn define-lambda [expre amb]
   (let [nombre (first (nth expre 1))
-        parametros (rest (nth expre 1)),
+        parametros (rest (nth expre 1))
         funcion (nth expre 2)]
     (list
      (symbol "#<unspecified>")
      (concat
       amb
       (list nombre)
-      (list (list 'lambda parametros funcion)))
-          
-    ))
-)
+      (list (list 'lambda parametros funcion))))))
 
 (defn define-macro [expre amb]
   (list (symbol "#<unspecified>")
-        (actualizar-amb
-         amb
+        (actualizar-amb amb
          (nth expre 1)
-         (nth expre 2))))
+         (_evaluar expre amb 2))))
 
 (defn evaluar-define
   "Evalua una expresion `define`. Devuelve una lista con el resultado y un ambiente actualizado con la definicion."
-  [expre amb]    
-    (if (= 3 (count expre))
+  [expre amb]
+  (if (= 3 (count expre))
 
-      (if (seq? (nth expre 1))
-        (define-lambda expre amb)
-        (define-macro expre amb)
-      )
-      (list (generar-mensaje-error :missing-or-extra 'define expre) amb)
-  )
-)
+    (if (seq? (nth expre 1))
+      (define-lambda expre amb)
+      (define-macro expre amb))
+    (list (generar-mensaje-error :missing-or-extra 'define expre) amb)))
 
 ; user=> (evaluar-if '(if 1 2) '(n 7))
 ; (2 (n 7))
@@ -1055,7 +1017,7 @@
         condicion (_evaluar expre amb 1)
         valorSiSeCumple (evaluar (nth expre 2) amb)]
     (cond
-      (= len 3) (if
+      (= len 3)(if
                  (igual? condicion (symbol "#t"))
                   valorSiSeCumple
                   (list (symbol "#<unspecified>") amb))
@@ -1075,23 +1037,21 @@
 ; (5 (#f #f #t #t))
 ; user=> (evaluar-or (list 'or (symbol "#f")) (list (symbol "#f") (symbol "#f") (symbol "#t") (symbol "#t")))
 ; (#f (#f #f #t #t))
-(defn _or [expre amb i len]
+(defn _or [expre amb len i]
   (cond
     (=  i len) (list (symbol "#f") amb)
-    :else (let [valor (_eval expre amb i)]
-            (if
-             (igual? valor (symbol "#f"))
-              (_or expre amb len (+ i 1))
-              (list valor amb)))))
+    :else
+    (let [val (_evaluar expre amb i)]
+      (if
+       (igual? val (symbol "#t"))
+        (list val amb)
+        (_or expre amb len (+ i 1))))))
 
 (defn evaluar-or [expre amb]
   (let [len (count expre)]
     (cond
       (< len 2) (list (symbol "#f") amb)
-      :else (_or expre amb len 1)
-    )
-  )
-)
+      :else (_or expre amb len 1))))
 
 ; user=> (evaluar-set! '(set! x 1) '(x 0))
 ; (#<unspecified> (x 1))
@@ -1108,7 +1068,7 @@
         valor (_evaluar expre amb 2)]
     (if (= 3 (count expre))
       (cond
-        (not (symbol? valor)) (list (generar-mensaje-error :bad-variable 'set! clave) amb)
-        (= (indexOf amb valor) -1) (list (generar-mensaje-error :unbound-variable clave) amb)
+        (not (symbol? clave)) (list (generar-mensaje-error :bad-variable 'set! clave) amb)
+        (= (indexOf amb clave) -1) (list (generar-mensaje-error :unbound-variable clave) amb)
         :else (list (symbol "#<unspecified>") (actualizar-amb amb clave valor)))
       (list (generar-mensaje-error :missing-or-extra 'set! expre) amb))))
