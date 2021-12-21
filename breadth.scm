@@ -3,8 +3,9 @@
 (define final '())
 
 (define (breadth-first bc)
-    (display "Ingrese el estado inicial: ") '(set! inicial (read))
-    (display "Ingrese el estado   final: ") '(set! final (read))
+    (display "BUG2")
+    (display "Ingrese el estado inicial: ") (set! inicial (read))
+    (display "Ingrese el estado   final: ") (set! final (read))
     (cond ((equal? inicial final) (display "El problema ya esta resuelto !!!") (newline) (breadth-first bc))
           (#T (buscar bc final (list (list inicial)) '()))))
 
