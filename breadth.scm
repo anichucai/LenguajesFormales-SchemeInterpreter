@@ -3,7 +3,6 @@
 (define final '())
 
 (define (breadth-first bc)
-    (display "BUG2")
     (display "Ingrese el estado inicial: ") (set! inicial (read))
     (display "Ingrese el estado   final: ") (set! final (read))
     (cond ((equal? inicial final) (display "El problema ya esta resuelto !!!") (newline) (breadth-first bc))
@@ -34,3 +33,4 @@
     (display "Exito !!!") (newline)
     (display "Prof ....... ") (display (- (length (car grafobusq)) 1)) (newline)
     (display "Solucion ... ") (display (reverse (car grafobusq))) (newline) #t)
+    
