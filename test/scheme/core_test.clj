@@ -1,7 +1,6 @@
-(ns testing
-  (:require [clojure.test :refer :all]))
-
-(load-file "scheme.clj")
+(ns scheme.core-test
+  (:require [clojure.test :refer :all]
+            [scheme.core :refer :all]))
 
 (deftest verificar-parentesis-test
   (testing "Test del valor de retorno"
@@ -443,5 +442,3 @@
     (is (=
          (list (symbol "#<unspecified>") '(x 5))
          (evaluar-set! '(set! x 5) '(x 0))))))
-
-(run-tests 'testing)
