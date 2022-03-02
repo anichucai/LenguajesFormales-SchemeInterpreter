@@ -1,3 +1,4 @@
+;(ns scheme.core)
 (ns scheme.core)
 
 (require '[clojure.string :as st :refer [blank? starts-with? ends-with? lower-case]]
